@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Of The Royals : Vastful Jianghu</title>
+    <style>
+        :root {
+            --bg-color: #0d0e15;
+            --card-bg: rgba(26, 28, 40, 0.85); 
+            --accent: #7289da;
+            --gold: #ffd700;
+            --text: #f0f1f5;
+            --hero-blue: #00d2ff;
+            --villain-red: #ff3333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            background-image: url('dashboard-bg.jpg'); 
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo-main { font-size: 2.2rem; font-weight: 900; color: var(--gold); text-shadow: 0px 0px 12px rgba(255, 215, 0, 0.6); letter-spacing: 2px; margin: 0; }
+        .logo-sub { font-size: 1.1rem; color: #ff5e62; letter-spacing: 4px; text-transform: uppercase; font-weight: bold; margin: 5px 0 0 0; }
+
+        #auth-screen {
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('login-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            border: 2px solid var(--gold);
+            box-shadow: 0px 0px 25px rgba(255, 215, 0, 0.2);
+        }
+
+        .container { max-width: 800px; width: 100%; }
+        .card { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; backdrop-filter: blur(8px); }
+        h2, h3 { color: var(--gold); text-align: center; margin-top: 0; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #333; background: rgba(37, 40, 61, 0.9); color: white; box-sizing: border-box; font-size: 1rem; }
+        button { background: var(--accent); font-weight: bold; cursor: pointer; border: none; }
+        button:hover { opacity: 0.9; }
+        .hidden { display: none; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
+        .badge { font-size: 1.3rem; font-weight: bold; color: var(--gold); }
+        .log { background: rgba(0, 0, 0, 0.8); padding: 10px; border-radius: 6px; height: 120px; overflow-y: auto; font-family: monospace; border: 1px solid #333; }
+        .path-btn { margin-top: 10px; padding: 12px; font-weight: bold; border: none; }
+        .auth-toggle { text-align: center; margin-top: 15px; font-size: 0.9rem; color: #aaa; cursor: pointer; }
+        .auth-toggle span { color: var(--gold); text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo-container">
+        <h1 class="logo-main">👑 FANTASY OF THE ROYALS</h1>
+        <p class="logo-sub">🌊 Vastful Jianghu</p>
+    </div>
+
+    <div id="auth-screen" class="card">
+        <div id="login-view">
+            <h2>Enter the Jianghu</h2>
+            <input type="text" id="login-username" placeholder="Player Moniker...">
+            <input type="password" id="login-password" placeholder="Secret Passphrase...">
+            <button onclick="handleAuth('login')">Initialize Session</button>
+            <div class="auth-toggle" onclick="toggleAuthView()">Don't have an account? <span>Form Clan Contract</span></div>
+        </div>
+        <div id="signup-view" class="hidden">
+            <h2>Form Clan Contract</h2>
+            <input type="text" id="signup-username" placeholder="Choose Moniker...">
+            <input type="password" id="signup-password" placeholder="Create Secret Passphrase...">
+            <button onclick="handleAuth('signup')">Seal Covenant</button>
+            <div class="auth-toggle" onclick="toggleAuthView()">Already registered? <span>Return to Gateway</span></div>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <div class="card">
+            <h2>Welcome, <span id="display-name">Player</span></h2>
+            <div class="stats-grid">
+                <div><p>Current Rank</p><div id="player-rank" class="badge">Rank E</div></div>
+                <div><p>Echo Beads</p><div id="player-beads" class="badge" style="color: #4edf8b;">0</div></div>
+            </div>
+            <button onclick="logout()" style="background: #cf4848; margin-top: 15px; padding: 5px;">Save & Disconnect</button>
+
+            <div id="deity-selection" class="hidden" style="margin-top: 15px; border-top: 1px dashed #444; padding-top: 10px;">
+                <p style="text-align: center; color: var(--hero-blue); font-weight: bold;">✨ Claim Ascension:</p>
+                <button class="path-btn" style="background: var(--hero-blue);" onclick="choosePath('Celestial Deity')">☀️ Celestial Deity (Righteous)</button>
+            </div>
+            <div id="sovereign-selection" class="hidden" style="margin-top: 15px; border-top: 1px dashed var(--villain-red); padding-top: 10px;">
+                <p style="text-align: center; color: var(--villain-red); font-weight: bold;">🌙 Verify Alignment (1000+ Beads):</p>
+                <select id="antagonist-trait">
+                    <option value="">-- Choose Your Nature --</option>
+                    <option value="Destroyer">💥 Destroyer</option>
+                    <option value="Manipulator">🧠 Manipulator</option>
+                    <option value="Dominator">⛓️ Dominator</option>
+                </select>
+                <button class="path-btn" style="background: var(--villain-red);" onclick="verifySovereign()">👑 Claim Majestic Sovereign Throne</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🎡 The Mystic Fortune Wheel</h3>
+            <p style="text-align: center; font-size: 0.9rem; color: #aaa;">Costs 20 Beads to spin. Win up to 100 beads!</p>
+            <button onclick="spinWheel()" style="background: #20b2aa;">🌀 Spin the Fate Wheels (-20 Beads)</button>
+            <div id="wheel-log" class="log">The Wheel awaits your offering...</div>
+        </div>
+
+        <div class="card">
+            <h3>🎰 Idle Death Gamble (IDG)</h3>
+            <p style="text-align: center; font-size: 0.9rem; color: #aaa;">Win 50 Echo Beads on absolute victory!</p>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="playIDG('gamble')" style="background: #e91e63;">🎲 Gamble Fate</button>
+                <button onclick="playIDG('skip')" style="background: #4caf50;">⏳ Skip Turn</button>
+                <button onclick="playIDG('force')" style="background: #9c27b0;">🔥 IDG-</button>
+            </div>
+            <p><strong>Game Log:</strong></p>
+            <div id="idg-log" class="log">Choose your move...</div>
+        </div>
+
+        <div class="card">
+            <h3>📜 Realm Questboard</h3>
+            <button onclick="completeQuest('song', 15)">🎵 Write a Song (+15 Beads)</button>
+            <button onclick="completeQuest('host', 15)">🎪 Host an Event (+15 Beads)</button>
+            <button onclick="completeQuest('trade', 25)">🤝 Execute a Successful Trade (+25 Beads)</button>
+            <button onclick="completeQuest('bounty', 40)">⚔️ Hunt a Rogue Bounty (+40 Beads)</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+<script>
+    // 🛠️ PASTE YOUR WEBSITES FIREBASE CONFIG KEYS HERE BELOW:
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        databaseURL: "https://YOUR_DATABASE_NAME.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let player = { name: "", password: "", beads: 0, rank: "Rank E", forceMode: false, chosenPath: null, trait: "" };
+
+    function toggleAuthView() {
+        document.getElementById('login-view').classList.toggle('hidden');
+        document.getElementById('signup-view').classList.toggle('hidden');
+    }
+
+    function handleAuth(type) {
+        const usernameInput = document.getElementById(`${type}-username`).value.trim().toLowerCase();
+        const passwordInput = document.getElementById(`${type}-password`).value;
+
+        if (!usernameInput || !passwordInput) return alert("Fill out all keys!");
+
+        const userRef = db.ref('players/' + usernameInput);
+
+        if (type === 'signup') {
+            userRef.once('value', snapshot => {
+                if (snapshot.exists()) {
+                    alert("This username is already taken!");
+                } else {
+                    player = { name: usernameInput, password: passwordInput, beads: 0, rank: "Rank E", forceMode: false, chosenPath: null, trait: "" };
+                    userRef.set(player);
+                    alert("Account created successfully!");
+                    enterDashboard();
+                }
+            });
+        } else if (type === 'login') {
+            userRef.once('value', snapshot => {
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    if (userData.password === passwordInput) {
+                        player = userData;
+                        alert(`Welcome back! Data loaded.`);
+                        enterDashboard();
+                    } else {
+                        alert("Incorrect password!");
+                    }
+                } else {
+                    alert("User not found. Sign up first!");
+                }
+            });
+        }
+    }
+
+    function enterDashboard() {
+        document.getElementById('display-name').innerText = player.name;
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        
+        db.ref('players/' + player.name).on('value', snapshot => {
+            if (snapshot.exists()) {
+                player = snapshot.val();
+                updateUI();
+            }
+        });
+    }
+
+    function syncToCloud() {
+        if (player.name) {
+            db.ref('players/' + player.name).set(player);
+        }
+    }
+
+    function logout() {
+        syncToCloud();
+        location.reload();
+    }
+
+    function updateUI() {
+        const deitySection = document.getElementById('deity-selection');
+        const sovereignSection = document.getElementById('sovereign-selection');
+        deitySection.classList.add('hidden');
+        sovereignSection.classList.add('hidden');
+
+        if (player.chosenPath) {
+            player.rank = player.chosenPath + (player.trait ? ` [${player.trait}]` : "");
+        } else {
+            if (player.beads >= 1000) {
+                sovereignSection.classList.remove('hidden');
+                deitySection.classList.remove('hidden');
+                player.rank = "Apex Threshold";
+            } else if (player.beads >= 500) {
+                deitySection.classList.remove('hidden');
+                player.rank = "Rank A+";
+            } else if (player.beads >= 350) player.rank = "Rank A";
+            else if (player.beads >= 200) player.rank = "Rank B";
+            else if (player.beads >= 100) player.rank = "Rank C";
+            else if (player.beads >= 40) player.rank = "Rank D";
+            else player.rank = "Rank E";
+        }
+
+        const rankDisplay = document.getElementById('player-rank');
+        rankDisplay.innerText = player.rank;
+        rankDisplay.style.color = player.rank.includes("Celestial") ? "var(--hero-blue)" : player.rank.includes("Majestic") ? "var(--villain-red)" : "var(--gold)";
+        document.getElementById('player-beads').innerText = player.beads;
+    }
+
+    function choosePath(path) { 
+        player.chosenPath = path; 
+        player.trait = ""; 
+        syncToCloud(); 
+    }
+    
+    function verifySovereign() {
+        const val = document.getElementById('antagonist-trait').value;
+        if (!val) return alert("Select your dangerous path!");
+        player.chosenPath = "Majestic Sovereign"; 
+        player.trait = val; 
+        syncToCloud();
+    }
+
+    function logMessage(targetId, msg) {
+        const log = document.getElementById(targetId);
+        log.innerHTML += `<div>${msg}</div>`; 
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function spinWheel() {
+        if (player.beads < 20) return alert("Insufficient Echo Beads!");
+        player.beads -= 20;
+        
+        const outcomes = [0, 10, 20, 40, 60, 100];
+        const result = outcomes[Math.floor(Math.random() * outcomes.length)];
+        player.beads += result;
+
+        let msg = result === 0 ? "❌ Fate was cruel. You won 0 Beads." : `🎉 The Wheel stops! Gained +${result} Echo Beads.`;
+        logMessage('wheel-log', msg);
+        syncToCloud();
+    }
+
+    function playIDG(move) {
+        const logId = 'idg-log';
+        if (player.forceMode && move === 'skip') return logMessage(logId, "❌ IDG- Mode active. Skips are sealed!");
+        if (move === 'force') { player.forceMode = true; syncToCloud(); return logMessage(logId, "🔥 IDG- Mode initialized. No escaping."); }
+        if (move === 'skip') return logMessage(logId, "⏳ Safely preserved turn sequence.");
+
+        if (move === 'gamble') {
+            const roll = Math.floor(Math.random() * 21) - 10;
+            player.beads = Math.max(0, player.beads + roll);
+            logMessage(logId, `🎲 Drew Fate value: ${roll >= 0 ? '+' : ''}${roll}`);
+
+            if (Math.random() > 0.7) {
+                player.beads += 50;
+                logMessage(logId, "🏆 ABSOLUTE IDG VICTORY (+50 Beads)!");
+                player.forceMode = false;
+            }
+            syncToCloud();
+        }
+    }
+
+    function completeQuest(type, amount) { 
+        player.beads += amount; 
+        syncToCloud(); 
+    }
+</script>
+</body>
+</html>
