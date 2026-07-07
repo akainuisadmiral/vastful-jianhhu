@@ -145,7 +145,6 @@
         const screenGame = document.getElementById('screen-game');
         const btnEnterGame = document.getElementById('btn-enter-game');
         const btnAuthSubmit = document.getElementById('btn-auth-submit');
-        const authToggleBtn = document.getElementById('auth-toggle-btn');
         const authToggleMsg = document.getElementById('auth-toggle-msg');
         const authTitle = document.getElementById('auth-title');
         const inputUser = document.getElementById('auth-username');
@@ -177,22 +176,24 @@
             currentScreen = screenName;
         }
 
-        // Trigger safe structural layout shift on button click
+        // Trigger safe screen switch to auth panel
         btnEnterGame.addEventListener('click', () => {
             changeScreen('auth');
         });
 
-        authToggleBtn.addEventListener('click', () => {
-            if (authMode === 'login') {
-                authMode = 'register';
-                authTitle.innerText = 'CREATE ACCOUNT';
-                authToggleMsg.innerHTML = 'Already registered? <span id="auth-toggle-btn">Login here</span>';
-            } else {
-                authMode = 'login';
-                authTitle.innerText = 'LOGIN TO REALM';
-                authToggleMsg.innerHTML = 'New wanderer? <span id="auth-toggle-btn">Create Account</span>';
+        // Safe Event Delegation for dynamic login/register toggle element
+        authToggleMsg.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'auth-toggle-btn') {
+                if (authMode === 'login') {
+                    authMode = 'register';
+                    authTitle.innerText = 'CREATE ACCOUNT';
+                    authToggleMsg.innerHTML = 'Already registered? <span id="auth-toggle-btn">Login here</span>';
+                } else {
+                    authMode = 'login';
+                    authTitle.innerText = 'LOGIN TO REALM';
+                    authToggleMsg.innerHTML = 'New wanderer? <span id="auth-toggle-btn">Create Account</span>';
+                }
             }
-            document.getElementById('auth-toggle-btn').addEventListener('click', () => authToggleBtn.click());
         });
 
         // Authentication Submission Processing
