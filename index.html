@@ -10,10 +10,10 @@
         
         #game-container { width: 100vw; height: 100vh; max-width: 600px; max-height: 900px; border: 2px solid #444; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         
-        /* 🖼️ Screen Frameworks with Transparent Overlays */
+        /* 🖼️ Transparent Overlays over the Video Layer */
         #screen-start, #screen-auth { 
             width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; position: absolute; top: 0; left: 0; z-index: 10;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
         }
         #screen-auth { display: none; z-index: 5; }
         
@@ -23,7 +23,7 @@
             background-size: cover;
         }
 
-        /* 🎬 Background Video Container Layer */
+        /* 🎬 Background Video Layer */
         .video-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1;
         }
@@ -68,7 +68,6 @@
 
     <div id="game-container">
         
-        <!-- 🎬 SHARED VIDEO LAYER FOR AUTH SCREENS -->
         <video id="video-background" autoplay loop muted playsinline class="video-bg">
             <source src="background.mp4" type="video/mp4">
         </video>
@@ -192,7 +191,7 @@
             }
             if (screenName === 'game') {
                 screenGame.style.display = 'flex';
-                videoBackground.style.display = 'none'; // Turn off entry video during dashboard gameplay
+                videoBackground.style.display = 'none';
             }
             currentScreen = screenName;
         }
@@ -390,4 +389,7 @@
                 snapshot.forEach((child) => {
                     const val = child.val();
                     if(val && val.data) {
-              
+                        leaders.push({ name: child.key, level: val.data.level || 1 });
+                    }
+                });
+   
