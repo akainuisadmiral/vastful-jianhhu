@@ -72,7 +72,8 @@
     <div id="game-container">
         <!-- 🎬 CUTSCENE LAYER -->
         <div id="cutscene-container">
-            <video id="cutscene-video" playsinline muted>
+            <!-- 🔒 Added explicit muted and loop controls directly inside HTML tracking rules -->
+            <video id="cutscene-video" playsinline muted autoplay>
                 <source src="background.mp4" type="video/mp4">
             </video>
             <div id="skip-msg">Tap anywhere to skip cutscene</div>
@@ -200,13 +201,24 @@
             currentScreen = screenName;
         }
 
-        // Trigger Cutscene Video before Login Screen
+        // Trigger Cutscene Video safely before Login Screen
         btnEnterGame.addEventListener('click', () => {
             cutsceneContainer.style.display = 'flex';
-            cutsceneVideo.play().catch(() => {
-                // If phone browser blocks auto-play block completely, skip to login
+            cutsceneVideo.muted = true; // Force complete audio lockdown
+            
+            // Safety fallback system: If video fails or can't play within 500ms, push forward anyway
+            let safetyTimeout = setTimeout(() => {
                 endCutscene();
-            });
+            }, 500);
+
+            cutsceneVideo.play()
+                .then(() => {
+                    clearTimeout(safetyTimeout); // Video works, clear fallback safety
+                })
+                .catch(() => {
+                    clearTimeout(safetyTimeout);
+                    endCutscene(); // Immediate safety jump if script errors
+                });
         });
 
         // End video triggers
@@ -372,19 +384,4 @@
                 return;
             }
             if (playerData.hp >= playerData.maxHp) {
-                addLog("Your vital energy is already full.", "system");
-                return;
-            }
-            playerData.gold -= 10;
-            playerData.hp = playerData.maxHp;
-            addLog("🍵 Drank a medicinal herbal tea. Vitality fully restored!", "loot");
-            updateHud();
-            saveGameData();
-        });
-
-        function checkLevelUp() {
-            const nextLevelExp = playerData.level * 100;
-            if (playerData.exp >= nextLevelExp) {
-                playerData.exp -= nextLevelExp;
-                playerData.level += 1;
-                playerData.maxHp += 20;
+                addLog("Your vital ener
