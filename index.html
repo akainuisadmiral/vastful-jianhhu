@@ -10,7 +10,7 @@
         
         #game-container { width: 100vw; height: 100vh; max-width: 600px; max-height: 900px; border: 2px solid #444; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         
-        /* 🖼️ Assigning your background image files */
+        /* 🖼️ Background Image Screens */
         #screen-start, #screen-auth { 
             width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px; position: absolute; top: 0; left: 0; z-index: 10;
             background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('login-bg.jpg') no-repeat center center;
@@ -23,13 +23,6 @@
             background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('dashboard-bg.jpg') no-repeat center center;
             background-size: cover;
         }
-        
-        /* 🎬 Cutscene Video Overlay Box */
-        #cutscene-container {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 50; justify-content: center; align-items: center;
-        }
-        #cutscene-video { width: 100%; height: 100%; object-fit: contain; }
-        #skip-msg { position: absolute; bottom: 20px; text-align: center; width: 100%; color: rgba(255,255,255,0.4); font-size: 0.8rem; letter-spacing: 1px; }
 
         .hidden { display: none !important; }
         h1 { color: #d4af37; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 2px 2px #000; letter-spacing: 2px; }
@@ -70,22 +63,12 @@
 <body>
 
     <div id="game-container">
-        <!-- 🎬 CUTSCENE LAYER -->
-        <div id="cutscene-container">
-            <video id="cutscene-video" playsinline muted preload="auto">
-                <source src="background.mp4" type="video/mp4">
-            </video>
-            <div id="skip-msg">Tap anywhere to skip cutscene</div>
-        </div>
-
-        <!-- START SCREEN -->
         <div id="screen-start">
             <h1>VASTFUL JIANGHU</h1>
             <div class="subtitle">A Mobile Text Wuxia RPG</div>
             <button class="btn" id="btn-enter-game">ENTER WORLD</button>
         </div>
 
-        <!-- AUTH SCREEN -->
         <div id="screen-auth">
             <div class="auth-box">
                 <h2 id="auth-title">LOGIN TO REALM</h2>
@@ -104,7 +87,6 @@
             </div>
         </div>
 
-        <!-- GAME SCREEN -->
         <div id="screen-game">
             <div id="header-bar">
                 <div id="user-display">Wanderer: <span id="lbl-username">...</span></div>
@@ -131,7 +113,6 @@
         </div>
     </div>
 
-    <!-- Firebase compatibility SDK scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
@@ -172,10 +153,6 @@
         const lblUsername = document.getElementById('lbl-username');
         const btnLogout = document.getElementById('btn-logout');
         const logContainer = document.getElementById('log-container');
-        
-        // Cutscene Elements
-        const cutsceneContainer = document.getElementById('cutscene-container');
-        const cutsceneVideo = document.getElementById('cutscene-video');
 
         // Game HUD Elements
         const valLevel = document.getElementById('val-level');
@@ -189,7 +166,7 @@
         const btnHeal = document.getElementById('btn-heal');
         const btnLeaderboard = document.getElementById('btn-leaderboard');
 
-        // Screen Navigation Navigation
+        // Screen Navigation
         function changeScreen(screenName) {
             screenStart.style.display = 'none';
             screenAuth.style.display = 'none';
@@ -200,42 +177,10 @@
             currentScreen = screenName;
         }
 
-        // Trigger Cutscene safely with comprehensive fallbacks
+        // Trigger safe structural layout shift on button click
         btnEnterGame.addEventListener('click', () => {
-            cutsceneContainer.style.display = 'flex';
-            cutsceneVideo.muted = true;
-            
-            // Set up a structural timeout: if video cannot play within 400ms, force bypass
-            let criticalTimeout = setTimeout(() => {
-                endCutscene();
-            }, 400);
-
-            try {
-                let playPromise = cutsceneVideo.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        clearTimeout(criticalTimeout);
-                    }).catch(() => {
-                        clearTimeout(criticalTimeout);
-                        endCutscene();
-                    });
-                }
-            } catch (err) {
-                clearTimeout(criticalTimeout);
-                endCutscene();
-            }
-        });
-
-        // Instant escape on video loading errors
-        cutsceneVideo.addEventListener('error', endCutscene);
-        cutsceneVideo.addEventListener('ended', endCutscene);
-        cutsceneContainer.addEventListener('click', endCutscene);
-
-        function endCutscene() {
-            try { cutsceneVideo.pause(); } catch(e){}
-            cutsceneContainer.style.display = 'none';
             changeScreen('auth');
-        }
+        });
 
         authToggleBtn.addEventListener('click', () => {
             if (authMode === 'login') {
@@ -387,4 +332,50 @@
             if (!isPlayerVerified) return;
             if (playerData.gold < 10) {
                 addLog("You don't have enough Gold to buy medicine.", "system");
-               
+                return;
+            }
+            if (playerData.hp >= playerData.maxHp) {
+                addLog("Your vital energy is already full.", "system");
+                return;
+            }
+            playerData.gold -= 10;
+            playerData.hp = playerData.maxHp;
+            addLog("🍵 Drank a medicinal herbal tea. Vitality fully restored!", "loot");
+            updateHud();
+            saveGameData();
+        });
+
+        function checkLevelUp() {
+            const nextLevelExp = playerData.level * 100;
+            if (playerData.exp >= nextLevelExp) {
+                playerData.exp -= nextLevelExp;
+                playerData.level += 1;
+                playerData.maxHp += 20;
+                playerData.hp = playerData.maxHp;
+                addLog(`🌟 LEVEL UP! You reached Level ${playerData.level}! Your cultivation breaks through!`, "level");
+            }
+        }
+
+        btnLeaderboard.addEventListener('click', () => {
+            addLog("Fetching realm rankings...", "system");
+            database.ref('users').orderByChild('data/level').limitToLast(5).once('value').then((snapshot) => {
+                if (!snapshot.exists()) {
+                    addLog("No rankings found yet.", "system");
+                    return;
+                }
+                addLog("--- TOP WANDERERS ---", "loot");
+                let leaders = [];
+                snapshot.forEach((child) => {
+                    const val = child.val();
+                    if(val && val.data) {
+                        leaders.push({ name: child.key, level: val.data.level || 1 });
+                    }
+                });
+                leaders.reverse().forEach((l, idx) => {
+                    addLog(`${idx + 1}. ${l.name.toUpperCase()} (Lv. ${l.level})`, "loot");
+                });
+            });
+        });
+    </script>
+</body>
+</html>
