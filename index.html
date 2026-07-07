@@ -72,8 +72,7 @@
     <div id="game-container">
         <!-- 🎬 CUTSCENE LAYER -->
         <div id="cutscene-container">
-            <!-- 🔒 Added explicit muted and loop controls directly inside HTML tracking rules -->
-            <video id="cutscene-video" playsinline muted autoplay>
+            <video id="cutscene-video" playsinline muted preload="auto">
                 <source src="background.mp4" type="video/mp4">
             </video>
             <div id="skip-msg">Tap anywhere to skip cutscene</div>
@@ -201,32 +200,39 @@
             currentScreen = screenName;
         }
 
-        // Trigger Cutscene Video safely before Login Screen
+        // Trigger Cutscene safely with comprehensive fallbacks
         btnEnterGame.addEventListener('click', () => {
             cutsceneContainer.style.display = 'flex';
-            cutsceneVideo.muted = true; // Force complete audio lockdown
+            cutsceneVideo.muted = true;
             
-            // Safety fallback system: If video fails or can't play within 500ms, push forward anyway
-            let safetyTimeout = setTimeout(() => {
+            // Set up a structural timeout: if video cannot play within 400ms, force bypass
+            let criticalTimeout = setTimeout(() => {
                 endCutscene();
-            }, 500);
+            }, 400);
 
-            cutsceneVideo.play()
-                .then(() => {
-                    clearTimeout(safetyTimeout); // Video works, clear fallback safety
-                })
-                .catch(() => {
-                    clearTimeout(safetyTimeout);
-                    endCutscene(); // Immediate safety jump if script errors
-                });
+            try {
+                let playPromise = cutsceneVideo.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        clearTimeout(criticalTimeout);
+                    }).catch(() => {
+                        clearTimeout(criticalTimeout);
+                        endCutscene();
+                    });
+                }
+            } catch (err) {
+                clearTimeout(criticalTimeout);
+                endCutscene();
+            }
         });
 
-        // End video triggers
+        // Instant escape on video loading errors
+        cutsceneVideo.addEventListener('error', endCutscene);
         cutsceneVideo.addEventListener('ended', endCutscene);
         cutsceneContainer.addEventListener('click', endCutscene);
 
         function endCutscene() {
-            cutsceneVideo.pause();
+            try { cutsceneVideo.pause(); } catch(e){}
             cutsceneContainer.style.display = 'none';
             changeScreen('auth');
         }
@@ -244,7 +250,7 @@
             document.getElementById('auth-toggle-btn').addEventListener('click', () => authToggleBtn.click());
         });
 
-        // Authentication Submission Processing (Secured From Tampering)
+        // Authentication Submission Processing
         btnAuthSubmit.addEventListener('click', () => {
             const username = inputUser.value.trim().toLowerCase();
             const password = inputPass.value.trim();
@@ -381,7 +387,4 @@
             if (!isPlayerVerified) return;
             if (playerData.gold < 10) {
                 addLog("You don't have enough Gold to buy medicine.", "system");
-                return;
-            }
-            if (playerData.hp >= playerData.maxHp) {
-                addLog("Your vital ener
+               
